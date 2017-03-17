@@ -12,8 +12,13 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return Twitter::getTrendsAvailable();
 });
+
+Route::get('/telaviv', function() {
+  return Twitter::getTrendsPlace(['id' => 1968212]);
+});
+
 
 Route::get('/webhook', 'MessengerController@webhook');
 Route::post('/webhook', 'MessengerController@webhook_post');

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 use pimax\FbBotApp;
 use pimax\Messages\Message;
+use Twitter;
 
 class MessengerController extends Controller
 {
@@ -22,14 +23,40 @@ class MessengerController extends Controller
 
   public function webhook_post()
   {
+    // get message input
     $input = \Input::all();
-    \Log::info(print_r($input, 1));
+    $recipient = $input['entry'][0]['messaging'][0]['sender']['id'];
+    $input_text = strtolower($input['entry'][0]['messaging'][0]['message']['text']);
 
+    // Log variables into log file
+    // \Log::info(print_r($input_text, 1));
+
+    // create a bot instance
     $token = env('PAGE_ACCESS_TOKEN');
     $bot = new FbBotApp($token);
 
-    $recipient = $input['entry'][0]['messaging'][0]['sender']['id'];
-    $text = $input['entry'][0]['messaging'][0]['message']['text'];
+    // handle input
+    if( in_array($input_text, ["help", "help me", "i need help", "need help"]) ) {
+      $text = "How Can I Help?";
+    }
+    elseif( in_array($input_text, ["berlin", "tel aviv", "los angeles", "new york"]) ) {
+      $trends = Twitter::getTrendsPlace(['id' => 1968212]);
+      $text = "Tranding in " . $input_text . ": \n";
+
+      foreach ($trends[0]->trends as $index => $trend) {
+        if($index > 9){
+          break;
+        }
+        $text .= $index+1 . ". " . $trend->name . "\n";
+        \Log::info("\n" . $index+1 . ". " . $trend->name);
+      }
+    }
+    elseif($input_text == "hi") {
+      $text = "Hi Back!!";
+    }
+    else $text = "I didn't catch that";
+
+    // send message
     $message = new Message($recipient, $text);
     $bot->send($message);
   }
